@@ -23,8 +23,6 @@ from hand_eval.params import ranks_7cards, LUT_nChooseK_7cards, cardToInt, intTo
 def computeHoleCardsEquities(holeCardCombs, LUT_nChooseK_2cards):
     LUT_equityHoleCards = np.zeros(len(holeCardCombs), dtype=np.float32)
     
-    tmp2 = np.zeros(2, dtype=np.uint64)
-
     for i in prange(len(holeCardCombs)):
         print(i,len(holeCardCombs))
         
@@ -38,7 +36,7 @@ def computeHoleCardsEquities(holeCardCombs, LUT_nChooseK_2cards):
         # Loop over all possible 7 card combinations (board cards + opponent hole cards)
         # from the deck (for current hole cards)
         counter, wins = 0, 0
-        tmp = np.zeros(7, dtype=np.uint64)
+#        tmp = np.zeros(7, dtype=np.uint64)
         curCards, opponentCards = np.zeros(7, dtype=np.uint8), np.zeros(7, dtype=np.uint8)
         for i1 in range(len(deck)):
             c1 = deck[i1]
@@ -72,25 +70,21 @@ def computeHoleCardsEquities(holeCardCombs, LUT_nChooseK_2cards):
                                         curCards[3], curCards[4], curCards[5], \
                                         curCards[6] = curHoleCards[0],curHoleCards[1],c1,c2,c3,c4,c5
                                     
-                                    rankCur = evaluator(curCards, ranks_7cards, LUT_nChooseK_7cards, tmp)
+                                    rankCur = evaluator(curCards, ranks_7cards, LUT_nChooseK_7cards)
                                     rankOpponent = evaluator(opponentCards, ranks_7cards, 
-                                                             LUT_nChooseK_7cards, tmp)
+                                                             LUT_nChooseK_7cards)
                                     
                                     isWin = int(rankCur < rankOpponent)
                                     wins += isWin
         
         # Get index to equity LUT
-        tmp2[0] = LUT_nChooseK_2cards[curHoleCards[0],0]
-        tmp2[1] = LUT_nChooseK_2cards[curHoleCards[1],1]
-        ind = np.sum(tmp2)
+        tmp0 = LUT_nChooseK_2cards[curHoleCards[0],0]
+        tmp1 = LUT_nChooseK_2cards[curHoleCards[1],1]
+        ind = tmp0 + tmp1
         
         LUT_equityHoleCards[ind] = wins / counter
                                 
     return LUT_equityHoleCards
-
-
-def convertIntToCard(ints):
-    return [intToCard[intt] for intt in ints]
 
 
 
@@ -100,7 +94,7 @@ st = time.time()
 LUT = computeHoleCardsEquities(holeCardCombs, LUT_nChooseK_2cards)
 print(time.time()-st)
 
-np.save('LUT_equity_hole_cards', LUT)
+#np.save('LUT_equity_hole_cards', LUT)
 
 # %%    
 
