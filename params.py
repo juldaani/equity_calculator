@@ -14,12 +14,18 @@ LUT_nChooseK_2cards = np.zeros((52,2), dtype=np.int64)
 LUT_nChooseK_2cards[:,0] = scipy.special.comb(np.arange(52), np.full(52,1)).astype(np.int)
 LUT_nChooseK_2cards[:,1] = scipy.special.comb(np.arange(52), np.full(52,2)).astype(np.int)
 
-
+preflopEquities_LUT = None
 try:
-    holeCardEquities = np.load('/home/juho/dev_folder/equity_calculator/LUT_equity_hole_cards.npy')
+    preflopEquities_LUT = np.load('/home/juho/dev_folder/equity_calculator/LUT_equity_preflop.npy')
 except FileNotFoundError as err:
-    print('VIRHE! Cannot load lookup table for hole card equities. Run create_holecards_LUT.py. \
+    print('VIRHE! Cannot load lookup table for preflop equities. Run create_preflop_LUT.py. \
           before proceeding.\n')
     print(err)
-    sys.exit()
-    
+
+flopEquities_LUT = None
+try:
+    flopEquities_LUT = np.load('/home/juho/dev_folder/equity_calculator/LUT_equity_flop.npy')
+except FileNotFoundError as err:
+    print('VIRHE! Cannot load lookup table for flop equities. Run create_flop_LUT.py. \
+          before proceeding.\n')
+    print(err)

@@ -12,9 +12,10 @@ import numpy as np
 from numba import jit, prange
 
 from hand_eval.evaluator_numba import evaluate_numba2 as evaluator
-from hand_eval.params import ranks_7cards, LUT_nChooseK_7cards, cardToInt, intToCard
-from equity_calculator.params import LUT_nChooseK_2cards, holeCardEquities
-
+from hand_eval.evaluator_numba import sortCards
+from hand_eval.params import ranks_7cards, LUT_nChooseK_7cards, LUT_nChooseK_5cards, cardToInt,\
+    intToCard
+from equity_calculator.params import LUT_nChooseK_2cards, preflopEquities_LUT, flopEquities_LUT
 
 
 @jit(nopython=True, cache=True, fastmath=True, nogil=True)
@@ -52,18 +53,16 @@ def computeEquity(holeCards, boardCards, nIters):
 
 @jit(nopython=True, parallel=True, fastmath=True, nogil=True)
 def computeEquities(holeCards, boardCards):
-    
     preflopEquities = np.zeros(len(holeCards), dtype=np.float32)
     flopEquities = np.zeros(len(holeCards), dtype=np.float32)
     turnEquities = np.zeros(len(holeCards), dtype=np.float32)
     riverEquities = np.zeros(len(holeCards), dtype=np.float32)
     
     for i in prange(len(holeCards)):
-        curHoleCards = holeCards[i]
         curBoardCards = boardCards[i]
         
-        holeCard1 = curHoleCards[0]
-        holeCard2 = curHoleCards[1]
+        holeCard1 = holeCards[i,0]
+        holeCard2 = holeCards[i,1]
         
         # Sort hole cards because otherwise lookup will fail
         if(holeCard1 > holeCard2):
@@ -71,14 +70,25 @@ def computeEquities(holeCards, boardCards):
         
         # Preflop equity
         ind = LUT_nChooseK_2cards[holeCard1,0] + LUT_nChooseK_2cards[holeCard2,1]
-        preflopEquities[i] = holeCardEquities[ind]
+        preflopEquities[i] = preflopEquities_LUT[ind]
     
         # Flop equity
-        flopEquities[i] = computeEquity(curHoleCards, curBoardCards[:3], 10000)
-        turnEquities[i] = computeEquity(curHoleCards, curBoardCards[:4], 1500)
-        riverEquities[i] = computeEquity(curHoleCards, curBoardCards, 1000)
+        c1,c2,c3,c4,c5,_,_ = sortCards(holeCard1, holeCard2, curBoardCards[0], curBoardCards[1],
+                                       curBoardCards[2], 1000, 1000)
+        tmp0 = LUT_nChooseK_5cards[c1,0]
+        tmp1 = LUT_nChooseK_5cards[c2,1]
+        tmp2 = LUT_nChooseK_5cards[c3,2]
+        tmp3 = LUT_nChooseK_5cards[c4,3]
+        tmp4 = LUT_nChooseK_5cards[c5,4]
+        ind = tmp0 + tmp1 + tmp2 + tmp3 + tmp4
+        flopEquities[i] = flopEquities_LUT[ind]
+    
+        turnEquities[i] = computeEquity(holeCards[i], curBoardCards[:4], 1500)
+        riverEquities[i] = computeEquity(holeCards[i], curBoardCards, 2000)
         
     return preflopEquities, flopEquities, turnEquities, riverEquities
+
+
 
 
 
