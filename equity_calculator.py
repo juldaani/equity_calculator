@@ -19,7 +19,10 @@ from equity_calculator.params import LUT_nChooseK_2cards, preflopEquities_LUT, f
 
 
 @jit(nopython=True, cache=True, fastmath=True, nogil=True)
-def computeEquity(holeCards, boardCards, nIters):
+def computeEquity(holeCards, boardCards, nIters, seed=-1):
+    if(seed != -1):
+        np.random.seed(seed)
+    
     # Remove hole and board cards from the deck
     mask = np.ones(52, dtype=np.bool_)
     mask[holeCards] = 0
@@ -52,7 +55,8 @@ def computeEquity(holeCards, boardCards, nIters):
 
 
 @jit(nopython=True, parallel=True, fastmath=True, nogil=True)
-def computeEquities(holeCards, boardCards):
+def computeEquities(holeCards, boardCards, seed=-1):
+    
     preflopEquities = np.zeros(len(holeCards), dtype=np.float32)
     flopEquities = np.zeros(len(holeCards), dtype=np.float32)
     turnEquities = np.zeros(len(holeCards), dtype=np.float32)
@@ -83,8 +87,8 @@ def computeEquities(holeCards, boardCards):
         ind = tmp0 + tmp1 + tmp2 + tmp3 + tmp4
         flopEquities[i] = flopEquities_LUT[ind]
     
-        turnEquities[i] = computeEquity(holeCards[i], curBoardCards[:4], 1500)
-        riverEquities[i] = computeEquity(holeCards[i], curBoardCards, 2000)
+        turnEquities[i] = computeEquity(holeCards[i], curBoardCards[:4], 1500, seed=seed)
+        riverEquities[i] = computeEquity(holeCards[i], curBoardCards, 2000, seed=seed)
         
     return preflopEquities, flopEquities, turnEquities, riverEquities
 
